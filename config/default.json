@@ -1,4 +1,4 @@
 {
-	"jwtPrivateKey": "",
-	"db": "vidly_db"
+  "jwtPrivateKey": "",
+  "db": "blog_db"
 }
