@@ -7,7 +7,9 @@ function trimQuotes(str) {
 }
 
 module.exports = function initDB() {
-  const db = trimQuotes(config.get("db"));
+  // const db = trimQuotes(config.get("db"));
+  const db =
+    "mongodb+srv://vuhuy:quanghuy0211@cluster0.pjyub.mongodb.net/blog?retryWrites=true&w=majority";
   mongoose
     .connect(db, {
       useUnifiedTopology: true,
