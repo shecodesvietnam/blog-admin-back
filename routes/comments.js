@@ -27,7 +27,7 @@ router.post("/", async function handle(req, res) {
   if (!post)
     return res.status(404).send(`There is no post with id ${req.body.postId}`);
 
-  if (!user?.isAdmin && req.body.accepted) req.body.accepted = false;
+  if (user && !user.isAdmin && req.body.accepted) req.body.accepted = false;
 
   const comment = await new Comment({
     user: user && {
