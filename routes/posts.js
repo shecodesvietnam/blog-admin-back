@@ -35,7 +35,7 @@ router.post("/", [auth, admin], async function handle(req, res) {
     post.set("images", renamedImageFilenames);
   }
 
-  // post.save();
+  post.save();
 
   res.send(post);
 });
