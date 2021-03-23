@@ -1,15 +1,17 @@
 const mongoose = require("mongoose");
-const config = require("config");
+
 const Fawn = require("fawn");
 
-function trimQuotes(str) {
-  return str.indexOf('"') !== -1 ? str.slice(1, str.length - 1) : str;
-}
+require("dotenv").config();
+
+const user = process.env.DB_USERNAME;
+const password = process.env.DB_PASSWORD;
+const database = process.env.DB_NAME;
+
+console.log(user, password);
 
 module.exports = function initDB() {
-  // const db = trimQuotes(config.get("db"));
-  const db =
-    "mongodb+srv://vuhuy:quanghuy0211@cluster0.pjyub.mongodb.net/blog?retryWrites=true&w=majority";
+  const db = `mongodb+srv://${user}:${password}@cluster0.g1ooo.mongodb.net/${database}?retryWrites=true&w=majority`;
   mongoose
     .connect(db, {
       useUnifiedTopology: true,
@@ -18,5 +20,8 @@ module.exports = function initDB() {
     .then(function log() {
       console.log(`Connected to ${db}...`);
       Fawn.init(mongoose);
+    })
+    .catch((err) => {
+      console.log(err);
     });
 };

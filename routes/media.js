@@ -2,27 +2,140 @@ const express = require("express");
 const auth = require("./../middleware/auth");
 const admin = require("./../middleware/admin");
 const router = express.Router();
+const path = require("path");
+const crypto = require("crypto");
+const mongoose = require("mongoose");
+const multer = require("multer");
+const GridFsStorage = require("multer-gridfs-storage");
+const Grid = require("gridfs-stream");
 
-router.post("/", [auth, admin], async function handle(req, res) {
-  if (!req.files) return res.status(400).send("File is required");
+require("dotenv").config();
 
-  try {
-    const files = req.files.file;
-    if (!Array.isArray(files)) {
-      files.mv("media/" + files.name, function (err) {
-        if (err) throw err;
+const user = process.env.DB_USERNAME;
+const password = process.env.DB_PASSWORD;
+const database = process.env.DB_NAME;
+
+const mongoURI = `mongodb+srv://${user}:${password}@cluster0.g1ooo.mongodb.net/${database}?retryWrites=true&w=majority`;
+
+const conn = mongoose.createConnection(mongoURI, {
+  useNewUrlParser: true,
+  UseUnifiedTopology: true,
+});
+
+let gfs;
+conn.once("open", () => {
+  gfs = Grid(conn.db, mongoose.mongo);
+  gfs.collection("uploads");
+  console.log("Storage Connected");
+});
+
+// Create storage engine
+const storage = new GridFsStorage({
+  url: mongoURI,
+  file: (req, file) => {
+    return new Promise((resolve, reject) => {
+      crypto.randomBytes(16, (err, buf) => {
+        if (err) {
+          return reject(err);
+        }
+        const filename = buf.toString("hex") + path.extname(file.originalname);
+        const fileInfo = {
+          filename: filename,
+          bucketName: "uploads",
+        };
+        resolve(fileInfo);
       });
+    });
+  },
+});
+const upload = multer({ storage });
+
+// @route GET /
+router.get("/", (req, res) => {
+  gfs.files.find().toArray((err, files) => {
+    if (!files || files.length === 0) {
+      res.render("index", { files: false });
     } else {
-      files.forEach(function save(media) {
-        media.mv("media/" + media.name, function (err) {
-          if (err) throw err;
-        });
+      files.map((file) => {
+        if (
+          file.contentType === "image/jpeg" ||
+          file.contentType === "image/png"
+        ) {
+          file.isImage = true;
+        } else {
+          file.isImage = false;
+        }
+      });
+      res.render("index", { files: files });
+    }
+  });
+});
+
+// @route POST /upload
+router.post(
+  "/upload",
+  [auth, admin],
+  upload.single("file"),
+  async (req, res) => {
+    await res.json({ file: req.file });
+  }
+);
+
+// @route GET /files
+
+router.get("/files", (req, res) => {
+  gfs.files.find().toArray((err, files) => {
+    if (!files || files.length === 0) {
+      return res.status(404).json({
+        err: "No files exist",
       });
     }
-    res.send("File uploaded!");
-  } catch (error) {
-    return res.status(500).send(error);
-  }
+
+    return res.json(files);
+  });
+});
+
+// @route GET /files/:filename
+router.get("/files/:filename", [auth, admin], (req, res) => {
+  gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
+    // Check if file
+    if (!file || file.length === 0) {
+      return res.status(404).json({
+        err: "No file exists",
+      });
+    }
+    return res.json(file);
+  });
+});
+
+// @route GET /image/:filename => Display Image
+router.get("/image/:filename", [auth, admin], (req, res) => {
+  gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
+    // Check if file
+    if (!file || file.length === 0) {
+      return res.status(404).json({
+        err: "No file exists",
+      });
+    }
+
+    if (file.contentType === "image/jpeg" || file.contentType === "image/png") {
+      const readstream = gfs.createReadStream(file.filename);
+      readstream.pipe(res);
+    } else {
+      res.status(404).json({
+        err: "Not an image",
+      });
+    }
+  });
+});
+
+// @route DELETE /files/:id
+router.delete("/files/:id", [auth, admin], (req, res) => {
+  gfs.remove({ _id: req.params.id, root: "uploads" }, (err, gridStore) => {
+    if (err) {
+      return res.status(404).json({ err: err });
+    }
+  });
 });
 
 module.exports = router;
