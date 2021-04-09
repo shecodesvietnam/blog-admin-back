@@ -96,7 +96,7 @@ router.get("/files", (req, res) => {
 });
 
 // @route GET /files/:filename
-router.get("/files/:filename", [auth, admin], (req, res) => {
+router.get("/files/:filename", (req, res) => {
   gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
     // Check if file
     if (!file || file.length === 0) {
@@ -109,7 +109,7 @@ router.get("/files/:filename", [auth, admin], (req, res) => {
 });
 
 // @route GET /image/:filename => Display Image
-router.get("/image/:filename", [auth, admin], (req, res) => {
+router.get("/image/:filename", (req, res) => {
   gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
     // Check if file
     if (!file || file.length === 0) {
