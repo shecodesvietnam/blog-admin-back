@@ -15,9 +15,10 @@ require("./startup/db")();
 require("./startup/validation")();
 require("./startup/prod")(app);
 
-const port = process.env.PORT;
+const port = process.env.PORT || 3000;
 const host = process.env.HOST;
-const server = app.listen(port, host, () => {
+
+app.listen(port, host, () => {
   console.log(`Listening to port ${port}`);
-  console.log(`Server Ready at http://${host}:${port || 3000}/api`);
+  console.log(`Server Ready at http://${host}:${port}`);
 });

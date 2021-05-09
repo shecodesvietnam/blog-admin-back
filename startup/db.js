@@ -1,17 +1,9 @@
 const mongoose = require("mongoose");
-
 const Fawn = require("fawn");
-
+const { db } = require("./../config");
 require("dotenv").config();
 
-const user = process.env.DB_USERNAME;
-const password = process.env.DB_PASSWORD;
-const database = process.env.DB_NAME;
-
-console.log(user, password);
-
 module.exports = function initDB() {
-  const db = `mongodb+srv://${user}:${password}@cluster0.g1ooo.mongodb.net/${database}?retryWrites=true&w=majority`;
   mongoose
     .connect(db, {
       useUnifiedTopology: true,
