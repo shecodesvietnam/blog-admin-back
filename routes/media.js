@@ -8,10 +8,16 @@ const mongoose = require("mongoose");
 const multer = require("multer");
 const GridFsStorage = require("multer-gridfs-storage");
 const Grid = require("gridfs-stream");
-const { db } = require("./../config");
+
 require("dotenv").config();
 
-const conn = mongoose.createConnection(db, {
+const user = process.env.DB_USERNAME;
+const password = process.env.DB_PASSWORD;
+const database = process.env.DB_NAME;
+
+const mongoURI = `mongodb+srv://${user}:${password}@cluster0.g1ooo.mongodb.net/${database}?retryWrites=true&w=majority`;
+
+const conn = mongoose.createConnection(mongoURI, {
   useNewUrlParser: true,
   UseUnifiedTopology: true,
 });
@@ -25,7 +31,7 @@ conn.once("open", () => {
 
 // Create storage engine
 const storage = new GridFsStorage({
-  url: db,
+  url: mongoURI,
   file: (req, file) => {
     return new Promise((resolve, reject) => {
       crypto.randomBytes(16, (err, buf) => {
@@ -69,9 +75,9 @@ router.get("/", (req, res) => {
 router.post(
   "/upload",
   [auth, admin],
-  upload.single("file"),
+  upload.array("file", 8),
   async (req, res) => {
-    await res.json({ file: req.file });
+    await res.status(200).json({ message: "Dman", file: req.files });
   }
 );
 
@@ -85,12 +91,12 @@ router.get("/files", (req, res) => {
       });
     }
 
-    return res.json(files);
+    return res.status(200).json(files);
   });
 });
 
 // @route GET /files/:filename
-router.get("/files/:filename", [auth, admin], (req, res) => {
+router.get("/files/:filename", (req, res) => {
   gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
     // Check if file
     if (!file || file.length === 0) {
@@ -103,7 +109,7 @@ router.get("/files/:filename", [auth, admin], (req, res) => {
 });
 
 // @route GET /image/:filename => Display Image
-router.get("/image/:filename", [auth, admin], (req, res) => {
+router.get("/image/:filename", (req, res) => {
   gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
     // Check if file
     if (!file || file.length === 0) {
@@ -124,12 +130,19 @@ router.get("/image/:filename", [auth, admin], (req, res) => {
 });
 
 // @route DELETE /files/:id
-router.delete("/files/:id", [auth, admin], (req, res) => {
-  gfs.remove({ _id: req.params.id, root: "uploads" }, (err, gridStore) => {
-    if (err) {
-      return res.status(404).json({ err: err });
+router.delete("/files/:filename", [auth, admin], (req, res) => {
+  gfs.remove(
+    { filename: req.params.filename, root: "uploads" },
+    (err, gridStore) => {
+      if (err) {
+        return res.status(404).json({ err: err });
+      } else {
+        return res.status(200).json({
+          message: `File with ID ${req.params.filename} deleted`,
+        });
+      }
     }
-  });
+  );
 });
 
 module.exports = router;

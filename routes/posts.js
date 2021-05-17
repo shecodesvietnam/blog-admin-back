@@ -25,15 +25,6 @@ router.post("/", [auth, admin], async function handle(req, res) {
   if (error) return res.status(400).send(error.details[0].message);
 
   const post = await new Post({ ...req.body });
-  const renamedImageFilenames = [];
-  if (req.body.images) {
-    req.body.images.forEach(function rename(image, index) {
-      renamedImageFilenames.push(
-        `/media/${`${post._id}_${index}${path.extname(image)}`}`
-      );
-    });
-    post.set("images", renamedImageFilenames);
-  }
 
   post.save();
 
@@ -46,16 +37,6 @@ router.put(
   async function handle(req, res) {
     const { error } = validate(req.body);
     if (error) return res.status(400).send(error.details[0].message);
-
-    const renamedImageFilenames = [];
-    if (req.body.images) {
-      req.body.images.forEach(function rename(image, index) {
-        renamedImageFilenames.push(
-          `/media/${`${req.params.id}_${index}${path.extname(image)}`}`
-        );
-      });
-      req.body.images = [...renamedImageFilenames];
-    }
 
     const post = await Post.findByIdAndUpdate(
       req.params.id,
