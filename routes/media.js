@@ -8,16 +8,10 @@ const mongoose = require("mongoose");
 const multer = require("multer");
 const GridFsStorage = require("multer-gridfs-storage");
 const Grid = require("gridfs-stream");
-
+const { db } = require("./../config");
 require("dotenv").config();
 
-const user = process.env.DB_USERNAME;
-const password = process.env.DB_PASSWORD;
-const database = process.env.DB_NAME;
-
-const mongoURI = `mongodb+srv://${user}:${password}@cluster0.g1ooo.mongodb.net/${database}?retryWrites=true&w=majority`;
-
-const conn = mongoose.createConnection(mongoURI, {
+const conn = mongoose.createConnection(db, {
   useNewUrlParser: true,
   UseUnifiedTopology: true,
 });
@@ -31,7 +25,7 @@ conn.once("open", () => {
 
 // Create storage engine
 const storage = new GridFsStorage({
-  url: mongoURI,
+  url: db,
   file: (req, file) => {
     return new Promise((resolve, reject) => {
       crypto.randomBytes(16, (err, buf) => {
